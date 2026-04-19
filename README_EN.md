@@ -28,7 +28,8 @@ Optimized for users with 8GB+ VRAM GPUs (12-16GB recommended).
 
 ### Requirements
 * OS: Windows 10/11
-* Python: 3.12 (or compatible)
+* Python: 3.12 (or compatible) — [Download from official website](https://www.python.org/downloads/windows/)
+  > ⚠️ **IMPORTANT:** During Python installation, make sure to check the **"Add Python 3.x to PATH"** box at the very bottom of the first setup screen! Without it, the app won't be able to build the virtual environment.
 * GPU: NVIDIA or AMD (minimum 8GB VRAM)
 
 ### Step 1. Installation
