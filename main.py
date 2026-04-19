@@ -284,7 +284,6 @@ class TranslatorApp(ctk.CTk):
         except Exception as e: messagebox.showerror("Error", str(e))
 
     def save_file(self):
-        # Оставили только TXT и DOCX
         p = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text", "*.txt"), ("Word", "*.docx")])
         if not p: return
         txt = self.text_r.get("1.0", "end").strip(); ext = os.path.splitext(p)[1].lower()
@@ -299,8 +298,21 @@ class TranslatorApp(ctk.CTk):
         self.log(UI_LANGS[self.ui_lang]["wait"])
         exe = os.path.join(BASE_PATH, "bin", "koboldcpp.exe")
         model = os.path.join(BASE_PATH, self.model_path)
-        cmd = [exe, "--model", model, "--gpulayers", str(self.gpu_layers), "--port", "5001", "--quiet", "--nommap"]
+        
+        # --- ФОРСАЖ ДВИЖКА KOBOLDCPP ---
+        cmd = [
+            exe, 
+            "--model", model, 
+            "--gpulayers", str(self.gpu_layers), 
+            "--port", "5001", 
+            "--quiet", 
+            "--nommap",
+            "--flashattention",       # Ускорение матричных вычислений для современных GPU
+            "--contextsize", "4096",  # Жесткий лимит контекста для экономии VRAM
+            "--blasbatchsize", "1024" # Увеличенный батч для быстрой обработки длинных текстов
+        ]
         cmd.append("--usecublas" if self.engine == "cuda" else "--usevulkan")
+        
         try:
             self.engine_proc = subprocess.Popen(cmd, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
         except: return False
