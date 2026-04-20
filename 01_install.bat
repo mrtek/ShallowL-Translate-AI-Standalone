@@ -45,21 +45,13 @@ echo [4/5] Installing libraries... / Установка библиотек...
 "%PY_DIR%\python.exe" -m pip install customtkinter huggingface_hub python-docx PyMuPDF requests openai
 if errorlevel 1 goto :ERROR_EXIT
 
-echo [5/5] Checking AI Engine and Model... / Проверка ИИ...
-if exist "bin\koboldcpp.exe" goto :ENGINE_OK
+echo [5/5] Checking AI Engine... / Проверка ИИ движка...
+if exist "bin\koboldcpp.exe" goto :FINISH
 echo Downloading AI Engine...
 curl -L -o bin\koboldcpp.exe https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp.exe
-:ENGINE_OK
-
-if exist "%MODEL_PATH%" goto :FINISH
-echo Downloading AI Model (8GB)... This may take a while.
-if not exist "models" mkdir "models"
-echo from huggingface_hub import hf_hub_download > dl.py
-echo hf_hub_download(repo_id='dphn/dolphin-2.9.3-mistral-nemo-12b-GGUF', filename='dolphin-2.9.3-mistral-nemo-12b.Q4_K_M.gguf', local_dir='models', local_dir_use_symlinks=False) >> dl.py
-"%PY_DIR%\python.exe" dl.py
-del dl.py
 
 :FINISH
+if not exist "models" mkdir "models"
 echo.
 echo Setup completed successfully! / Установка полностью завершена!
 pause

@@ -1,20 +1,36 @@
 # Python
 __pycache__/
 *.py[cod]
-
-# Временные файлы и портативный Python
-bin/python/
-bin/tmp_msi/
-dl.py
-
-# Тяжелые файлы (не заливаем на GitHub)
-bin/koboldcpp.exe
-models/
-
-# Локальные настройки (чтобы не затирать чужие стили)
-config.json
-prompts.json
-
-# На всякий случай (остатки от старых тестов)
+*$py.class
+*.so
+.Python
 venv/
 .venv/
+env/
+ENV/
+
+# Application specific
+bin/
+models/
+*.gguf
+app.log
+config.json
+prompts.json
+restart.bat
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
