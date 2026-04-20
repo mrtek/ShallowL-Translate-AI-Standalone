@@ -1,32 +1,71 @@
 @echo off
 chcp 65001 > nul
-title Install ShallowL Translate / Установка ShallowL Translate
+title Install ShallowL Translate AI Standalone / Установка
 
-echo [1/3] Preparing virtual environment... / Подготовка виртуального окружения...
+set "PY_BASE=https://www.python.org/ftp/python/3.12.3/amd64"
+set "PY_DIR=%~dp0bin\python"
+set "MODEL_PATH=models\dolphin-2.9.3-mistral-nemo-12b.Q4_K_M.gguf"
+
+echo [1/5] Cleaning up... / Очистка старых файлов...
 taskkill /F /IM python.exe /T >nul 2>&1
 taskkill /F /IM koboldcpp.exe /T >nul 2>&1
 
-if exist venv rmdir /s /q venv
-python -m venv venv
-call venv\Scripts\activate
+:: Сносим всё старое под корень
+if exist "%PY_DIR%" rmdir /s /q "%PY_DIR%"
+if exist "venv" rmdir /s /q "venv"
+if exist ".venv" rmdir /s /q ".venv"
+if exist "bin\tmp_msi" rmdir /s /q "bin\tmp_msi"
+if not exist "bin" mkdir "bin"
 
-if "%VIRTUAL_ENV%"=="" (
-    echo [ERROR] Virtual environment failed! / [ОШИБКА] Виртуальное окружение не создалось!
-    pause
-    exit /b
-)
+echo [2/5] Downloading Official Python Components... / Загрузка компонентов...
+mkdir bin\tmp_msi
+curl -L -o bin\tmp_msi\core.msi %PY_BASE%/core.msi
+if errorlevel 1 goto :ERROR_EXIT
+curl -L -o bin\tmp_msi\exe.msi %PY_BASE%/exe.msi
+curl -L -o bin\tmp_msi\lib.msi %PY_BASE%/lib.msi
+curl -L -o bin\tmp_msi\tcltk.msi %PY_BASE%/tcltk.msi
 
-echo [2/3] Installing libraries... / Установка библиотек...
-python -m pip install --upgrade pip
-pip install customtkinter huggingface_hub python-docx PyMuPDF requests openai
+echo Extracting Components (Portable mode)... / Распаковка (Без реестра)...
+:: /a заставляет Windows просто извлечь файлы из MSI, /qn делает это скрыто
+msiexec /a "%~dp0bin\tmp_msi\core.msi" /qn TARGETDIR="%PY_DIR%"
+msiexec /a "%~dp0bin\tmp_msi\exe.msi" /qn TARGETDIR="%PY_DIR%"
+msiexec /a "%~dp0bin\tmp_msi\lib.msi" /qn TARGETDIR="%PY_DIR%"
+msiexec /a "%~dp0bin\tmp_msi\tcltk.msi" /qn TARGETDIR="%PY_DIR%"
 
-echo [3/3] Downloading AI Engine and Model... / Загрузка движка ИИ и Модели...
-if not exist bin mkdir bin
+:: Удаляем технические копии msi и временную папку
+del /q "%PY_DIR%\*.msi"
+rmdir /s /q bin\tmp_msi
+
+echo [3/5] Installing Pip... / Установка Pip...
+curl -L -o bin\get-pip.py https://bootstrap.pypa.io/get-pip.py
+"%PY_DIR%\python.exe" bin\get-pip.py --no-warn-script-location
+del bin\get-pip.py
+
+echo [4/5] Installing libraries... / Установка библиотек...
+"%PY_DIR%\python.exe" -m pip install customtkinter huggingface_hub python-docx PyMuPDF requests openai
+if errorlevel 1 goto :ERROR_EXIT
+
+echo [5/5] Checking AI Engine and Model... / Проверка ИИ...
+if exist "bin\koboldcpp.exe" goto :ENGINE_OK
+echo Downloading AI Engine...
 curl -L -o bin\koboldcpp.exe https://github.com/LostRuins/koboldcpp/releases/latest/download/koboldcpp.exe
+:ENGINE_OK
 
-if not exist models mkdir models
-hf download dphn/dolphin-2.9.3-mistral-nemo-12b-GGUF dolphin-2.9.3-mistral-nemo-12b.Q4_K_M.gguf --local-dir models
+if exist "%MODEL_PATH%" goto :FINISH
+echo Downloading AI Model (8GB)... This may take a while.
+if not exist "models" mkdir "models"
+echo from huggingface_hub import hf_hub_download > dl.py
+echo hf_hub_download(repo_id='dphn/dolphin-2.9.3-mistral-nemo-12b-GGUF', filename='dolphin-2.9.3-mistral-nemo-12b.Q4_K_M.gguf', local_dir='models', local_dir_use_symlinks=False) >> dl.py
+"%PY_DIR%\python.exe" dl.py
+del dl.py
 
+:FINISH
 echo.
 echo Setup completed successfully! / Установка полностью завершена!
 pause
+exit /b
+
+:ERROR_EXIT
+echo [!] Critical error during installation! / Ошибка сети при скачивании!
+pause
+exit /b
